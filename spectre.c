@@ -14,6 +14,7 @@
 #include <GL/glext.h>
 
 #include <libspectre/spectre.h>
+#include "postscript.h"
 
 #include "shader.h"
 const char* vshader = "#version 450\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xyxx,y.yxxx,y.xxxx};void main(){gl_Position=x[gl_VertexID];}";
@@ -57,6 +58,10 @@ static gboolean check_escape(GtkWidget *widget, GdkEventKey *event)
 
 	return FALSE;
 }
+
+// void render_postscript(unsigned char* postscript, unsigned char** data, int* row_length) {
+// 	// 
+// }
 
 static gboolean
 on_render (GtkGLArea *glarea, GdkGLContext *context)

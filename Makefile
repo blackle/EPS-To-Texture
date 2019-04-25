@@ -35,8 +35,11 @@ shader.frag.min : shader.frag Makefile
 shader.h : shader.frag.min Makefile
 	mono ./shader_minifier.exe shader.frag.min -o shader.h
 
-$(PROJNAME).elf : $(PROJNAME).c shader.h Makefile
-	gcc -o $@ $< $(CFLAGS) -DDEFAULT_SAMPLES='"1000"'
+postscript.h : postscript.ps
+	xxd -i $< > $@
+
+$(PROJNAME).elf : $(PROJNAME).c shader.h postscript.h Makefile
+	gcc -o $@ $< $(CFLAGS)
 
 $(PROJNAME)_unpacked : $(PROJNAME).elf
 	mv $< $@
