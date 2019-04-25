@@ -21,7 +21,6 @@ const char* vshader = "#version 450\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xy
 
 #define CANVAS_WIDTH 1920
 #define CANVAS_HEIGHT 1080
-#define SCANLINE_SIZE 10
 
 #define CHAR_BUFF_SIZE 256
 
@@ -84,20 +83,14 @@ on_render (GtkGLArea *glarea, GdkGLContext *context)
 	spectre_document_load(doc, "./postscript.ps");
 	spectre_document_render(doc, &rendered_data, &row_length);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, row_length/4, row_length/4, 0, GL_BGRA, GL_UNSIGNED_BYTE, rendered_data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, row_length/4, row_length/4, 0, GL_BGRA, GL_UNSIGNED_BYTE, rendered_data);
 
-  glEnable(GL_SCISSOR_TEST);
-  for (int i = 0; i < CANVAS_HEIGHT; i += SCANLINE_SIZE) {
-	  glScissor(0,i,1920,SCANLINE_SIZE);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glFinish();
-		while (gtk_events_pending()) gtk_main_iteration();
-  }
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 #ifdef TIME_RENDER
-  printf("render time: %f\n", g_timer_elapsed(gtimer, NULL));
+	printf("render time: %f\n", g_timer_elapsed(gtimer, NULL));
 #endif
-  return TRUE;
+	return TRUE;
 }
 
 static void on_realize(GtkGLArea *glarea)
