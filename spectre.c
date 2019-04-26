@@ -25,6 +25,7 @@ const char* vshader = "#version 450\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xy
 #define CHAR_BUFF_SIZE 256
 
 #define DEBUG
+#define KEY_HANDLING
 
 inline void quit_asm() {
 	asm volatile(".intel_syntax noprefix");
@@ -42,6 +43,7 @@ GLuint renderedTex;
 
 GTimer* gtimer;
 
+#ifdef KEY_HANDLING
 static gboolean check_escape(GtkWidget *widget, GdkEventKey *event)
 {
 	(void)widget;
@@ -51,6 +53,7 @@ static gboolean check_escape(GtkWidget *widget, GdkEventKey *event)
 
 	return FALSE;
 }
+#endif
 
 // void render_postscript(unsigned char* postscript, unsigned char** data, int* row_length) {
 // 	// 
@@ -181,7 +184,9 @@ void _start() {
 	gtk_container_add(GTK_CONTAINER(win), glarea);
 
 	g_signal_connect(win, "destroy", gtk_main_quit, NULL);
+#ifdef KEY_HANDLING
 	g_signal_connect(win, "key_press_event", G_CALLBACK(check_escape), NULL);
+#endif
 	g_signal_connect(glarea, "realize", G_CALLBACK(on_realize), NULL);
 	g_signal_connect(glarea, "render", G_CALLBACK(on_render), NULL);
 
