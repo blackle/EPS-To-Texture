@@ -60,6 +60,7 @@ static gboolean
 on_render (GtkGLArea *glarea, GdkGLContext *context)
 {
 	(void)context;
+	(void)glarea;
 	float itime = g_timer_elapsed(gtimer, NULL);
 
 	glUseProgram(p);
@@ -72,9 +73,6 @@ on_render (GtkGLArea *glarea, GdkGLContext *context)
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-#ifdef TIME_RENDER
-	printf("render time: %f\n", g_timer_elapsed(gtimer, NULL));
-#endif
 	return TRUE;
 }
 
