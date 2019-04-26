@@ -17,5 +17,5 @@ void main() {
 		// Normalized pixel coordinates (from -1 to 1)
 		vec2 uv = (gl_FragCoord.xy - vec2(960.0, 540.0))/vec2(960.0, 960.0);
 
-		fragCol = alphablend(vec4(sin(uv*100.0 + sin(iTime)*30.0), 0.0, 1.0), OSD(uv, 0));
+		fragCol = alphablend(vec4(1.0, sin(uv*10.0 + sin(iTime)*5.0), 1.0), OSD(uv, 0));
 }
