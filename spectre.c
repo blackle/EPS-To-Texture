@@ -25,7 +25,6 @@ const char* vshader = "#version 450\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xy
 #define CHAR_BUFF_SIZE 256
 
 #define DEBUG
-#define TIME_RENDER
 
 inline void quit_asm() {
 	asm volatile(".intel_syntax noprefix");
@@ -41,12 +40,7 @@ GLuint vao;
 GLuint p;
 GLuint renderedTex;
 
-bool rendered = false;
-bool flipped = false;
-
-#ifdef TIME_RENDER
 GTimer* gtimer;
-#endif
 
 static gboolean check_escape(GtkWidget *widget, GdkEventKey *event)
 {
@@ -66,24 +60,15 @@ static gboolean
 on_render (GtkGLArea *glarea, GdkGLContext *context)
 {
 	(void)context;
-	if (rendered || gtk_widget_get_allocated_width((GtkWidget*)glarea) < CANVAS_WIDTH) return TRUE;
-	if (!flipped) { gtk_gl_area_queue_render(glarea); flipped = true; return TRUE; }
+	float itime = g_timer_elapsed(gtimer, NULL);
 
-	rendered = true;
 	glUseProgram(p);
 	glBindVertexArray(vao);
 	glVertexAttrib1f(0, 0);
 	glUniform1i(0, 0);
 	glActiveTexture(GL_TEXTURE0 + 0);
 	glBindTexture(GL_TEXTURE_2D, renderedTex);
-
-	SpectreDocument* doc = spectre_document_new();
-	unsigned char* rendered_data;
-	int row_length;
-	spectre_document_load(doc, "./postscript.ps");
-	spectre_document_render(doc, &rendered_data, &row_length);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, row_length/4, row_length/4, 0, GL_BGRA, GL_UNSIGNED_BYTE, rendered_data);
+	glUniform1f(1, itime);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -160,18 +145,34 @@ static void on_realize(GtkGLArea *glarea)
 
 	glGenVertexArrays(1, &vao);
 
-  glEnable(GL_TEXTURE_2D);
-  glGenTextures(1, &renderedTex);
-  glBindTexture(GL_TEXTURE_2D, renderedTex);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glEnable(GL_TEXTURE_2D);
+	glGenTextures(1, &renderedTex);
+	glBindTexture(GL_TEXTURE_2D, renderedTex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	SpectreDocument* doc = spectre_document_new();
+	unsigned char* rendered_data;
+	int row_length;
+	spectre_document_load(doc, "./postscript.ps");
+	spectre_document_render(doc, &rendered_data, &row_length);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, row_length/4, row_length/4, 0, GL_BGRA, GL_UNSIGNED_BYTE, rendered_data);
+
+	GdkGLContext *context = gtk_gl_area_get_context(glarea);
+	GdkWindow *glwindow = gdk_gl_context_get_window(context);
+	GdkFrameClock *frame_clock = gdk_window_get_frame_clock(glwindow);
+
+	// Connect update signal:
+	g_signal_connect_swapped(frame_clock, "update", G_CALLBACK(gtk_gl_area_queue_render), glarea);
+
+	// Start updating:
+	gdk_frame_clock_begin_updating(frame_clock);
 }
 
 void _start() {
 	asm volatile("sub $8, %rsp\n");
-#ifdef TIME_RENDER
 	gtimer = g_timer_new();
-#endif
 
 	typedef void (*voidWithOneParam)(int*);
 	voidWithOneParam gtk_init_one_param = (voidWithOneParam)gtk_init;
