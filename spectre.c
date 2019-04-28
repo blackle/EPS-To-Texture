@@ -13,6 +13,9 @@
 #include <GL/glu.h>
 #include <GL/glext.h>
 
+#include <linux/memfd.h>
+#include <linux/fcntl.h>
+
 #include <libspectre/spectre.h>
 #include "postscript.h"
 
@@ -21,8 +24,7 @@ const char* vshader = "#version 450\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xy
 
 #define CANVAS_WIDTH 1920
 #define CANVAS_HEIGHT 1080
-
-#define CHAR_BUFF_SIZE 256
+#define CHAR_BUFF_SIZE 64
 
 #define DEBUG
 #define KEY_HANDLING
@@ -55,9 +57,31 @@ static gboolean check_escape(GtkWidget *widget, GdkEventKey *event)
 }
 #endif
 
-// void render_postscript(unsigned char* postscript, unsigned char** data, int* row_length) {
-// 	// 
-// }
+inline static int SYS_memfd_create(const char* name, unsigned int flags) {
+	register int ret;
+	asm volatile("mov $356, %%eax\nint $0x80":"=a"(ret):"b"(name),"c"(flags));
+	return ret;
+}
+
+inline static ssize_t SYS_write(int fd, const void *buf, size_t c) {
+  register ssize_t ret;
+  asm volatile("mov $4, %%eax\nint $0x80":"=a"(ret):"b"(fd),"c"(buf),"d"(c));
+  return ret;
+}
+
+void render_postscript(unsigned char* postscript, unsigned int length, unsigned char** data, int* row_length) {
+	int fd = SYS_memfd_create("", 0);
+	SYS_write(fd, postscript, length);
+
+	char memfd_path[CHAR_BUFF_SIZE];
+	if (snprintf(memfd_path, CHAR_BUFF_SIZE, "/proc/self/fd/%d", fd) >= CHAR_BUFF_SIZE) {
+		quit_asm();
+	}
+
+	SpectreDocument* doc = spectre_document_new();
+	spectre_document_load(doc, memfd_path);
+	spectre_document_render(doc, data, row_length);
+}
 
 static gboolean
 on_render (GtkGLArea *glarea, GdkGLContext *context)
@@ -152,11 +176,9 @@ static void on_realize(GtkGLArea *glarea)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	SpectreDocument* doc = spectre_document_new();
 	unsigned char* rendered_data;
 	int row_length;
-	spectre_document_load(doc, "./postscript.ps");
-	spectre_document_render(doc, &rendered_data, &row_length);
+	render_postscript(postscript_ps, postscript_ps_len, &rendered_data, &row_length);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, row_length/4, row_length/4, 0, GL_BGRA, GL_UNSIGNED_BYTE, rendered_data);
 
