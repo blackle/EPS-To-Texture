@@ -44,7 +44,7 @@ $(PROJNAME).elf : $(PROJNAME).c shader.h postscript.h Makefile
 $(PROJNAME)_unpacked : $(PROJNAME).elf
 	mv $< $@
 
-$(PROJNAME) : $(PROJNAME).elf.packed
+$(PROJNAME) : $(PROJNAME)_opt.elf.packed
 	mv $< $@
 
 #all the rest of these rules just takes a compiled elf file and generates a packed version of it with vondehi

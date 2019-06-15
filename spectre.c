@@ -29,7 +29,7 @@ const char* vshader = "#version 450\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xy
 #define DEBUG
 #define KEY_HANDLING
 
-inline void quit_asm() {
+void quit_asm() {
 	asm volatile(".intel_syntax noprefix");
 	asm volatile("xor edi, edi");
 	asm volatile("push 231"); //exit_group
